@@ -34,26 +34,26 @@ const layers = [
 ];
 
 const originalImages = {};
-const tintCache = {};
-let readyCallback = null;
+const tintedCache = {};
+let readyCb = null;
 
 function loadAllImages(cb) {
     let loaded = 0;
-    layers.forEach(layer => {
-        if (originalImages[layer.file]) { loaded++; check(); return; }
+    layers.forEach(l => {
+        if (originalImages[l.file]) { loaded++; check(); return; }
         const img = new Image();
-        img.src = layer.file;
+        img.src = l.file;
         img.onload = () => { loaded++; check(); };
         img.onerror = () => { loaded++; check(); };
-        originalImages[layer.file] = img;
+        originalImages[l.file] = img;
     });
-    function check() { if (loaded >= layers.length && readyCallback) readyCallback(); }
-    readyCallback = cb;
+    function check() { if (loaded >= layers.length && readyCb) readyCb(); }
+    readyCb = cb;
 }
 
 function onReady(cb) {
     if (Object.keys(originalImages).length >= layers.length) cb();
-    else readyCallback = cb;
+    else readyCb = cb;
 }
 
 function applyTint(sourceImg, colorHex) {
@@ -86,67 +86,47 @@ function applyTint(sourceImg, colorHex) {
 function renderCharacter(container, charData) {
     const skin = charData.skinColor || '#F2E7CD';
     const outline = charData.outlineColor || '#3A2E2E';
-    const shorts = charData.shortsColor || '#8B6B4D';
-    const shortsOutline = charData.shortsOutlineColor || '#3A2E2E';
+    const shorts = charData.shortsColor || '#34292E';
+    const shortsOutline = charData.shortsOutlineColor || '#151012';
 
-    if (!container._initialized) {
+    if (!container._built) {
         container.innerHTML = '';
-        layers.forEach((layer, index) => {
+        layers.forEach((l, i) => {
             const img = document.createElement('img');
-            img.style.position = 'absolute';
-            img.style.top = '0';
-            img.style.left = '0';
-            img.style.width = (canvasSize.w / 2) + 'px';
-            img.style.height = (canvasSize.h / 2) + 'px';
-            img.style.pointerEvents = 'none';
-            img.style.zIndex = index;
-            img.dataset.file = layer.file;
-            img.dataset.group = layer.group;
-            img.dataset.tint = layer.tint;
+            img.style.cssText = 'position:absolute;top:0;left:0;width:'+(canvasSize.w/2)+'px;height:'+(canvasSize.h/2)+'px;pointer-events:none;z-index:'+i;
+            img.dataset.file = l.file;
+            img.dataset.group = l.group;
+            img.dataset.tint = l.tint;
             container.appendChild(img);
         });
-        container._initialized = true;
+        container._built = true;
     }
 
-    const allImgs = container.querySelectorAll('img');
-    allImgs.forEach(img => {
-        const file = img.dataset.file;
-        const group = img.dataset.group;
-        const tint = img.dataset.tint === 'true';
-        const srcImg = originalImages[file];
-        if (!srcImg) return;
-
-        if (group === 'skin' && tint) img.src = applyTint(srcImg, skin);
-        else if (group === 'outline' && !tint) img.src = applyTint(srcImg, outline);
-        else if (group === 'shorts' && tint) img.src = applyTint(srcImg, shorts);
-        else if (group === 'shorts_outline' && !tint) img.src = applyTint(srcImg, shortsOutline);
-        else img.src = srcImg.src;
+    requestAnimationFrame(() => {
+        container.querySelectorAll('img').forEach(img => {
+            const srcImg = originalImages[img.dataset.file];
+            if (!srcImg) return;
+            const g = img.dataset.group;
+            const t = img.dataset.tint === 'true';
+            if (g === 'skin' && t) img.src = applyTint(srcImg, skin);
+            else if (g === 'outline' && !t) img.src = applyTint(srcImg, outline);
+            else if (g === 'shorts' && t) img.src = applyTint(srcImg, shorts);
+            else if (g === 'shorts_outline' && !t) img.src = applyTint(srcImg, shortsOutline);
+            else img.src = srcImg.src;
+        });
     });
 }
 
-function renderToCanvas(charData, scale = 1.0) {
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasSize.w * scale;
-    canvas.height = canvasSize.h * scale;
-    const ctx = canvas.getContext('2d');
-    const skin = charData.skinColor || '#F2E7CD';
-    const outline = charData.outlineColor || '#3A2E2E';
-    const shorts = charData.shortsColor || '#8B6B4D';
-    const shortsOutline = charData.shortsOutlineColor || '#3A2E2E';
-
-    layers.forEach(layer => {
-        const srcImg = originalImages[layer.file];
-        if (!srcImg) return;
-        let src;
-        if (layer.group === 'skin' && layer.tint) src = applyTint(srcImg, skin);
-        else if (layer.group === 'outline' && !layer.tint) src = applyTint(srcImg, outline);
-        else if (layer.group === 'shorts' && layer.tint) src = applyTint(srcImg, shorts);
-        else if (layer.group === 'shorts_outline' && !layer.tint) src = applyTint(srcImg, shortsOutline);
-        else src = srcImg.src;
-        const img = new Image();
-        img.src = src;
-        if (img.complete) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        else img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+function renderToCanvas(charData, scale) {
+    scale = scale || 1;
+    const c = document.createElement('canvas');
+    c.width = canvasSize.w * scale;
+    c.height = canvasSize.h * scale;
+    const ctx = c.getContext('2d');
+    layers.forEach(l => {
+        const img = originalImages[l.file];
+        if (!img) return;
+        ctx.drawImage(img, 0, 0, c.width, c.height);
     });
-    return canvas;
+    return c;
 }
