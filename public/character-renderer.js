@@ -1,39 +1,30 @@
-// Общий рендерер персонажа для редактора и мира
 const canvasSize = { w: 991, h: 1204 };
 
-// Все возможные слои
-const allLayers = [
-    // ЗАДНИЕ ЧАСТИ (рисуются первыми)
+const layers = [
     { file: 'parts/shoulder2_fill.png',     tint: true,  group: 'skin' },
     { file: 'parts/shoulder2_outline.png',  tint: false, group: 'outline' },
     { file: 'parts/forearm2_fill.png',      tint: true,  group: 'skin' },
     { file: 'parts/forearm2_outline.png',   tint: false, group: 'outline' },
     { file: 'parts/hip2_fill.png',          tint: true,  group: 'skin' },
     { file: 'parts/hip2_outline.png',       tint: false, group: 'outline' },
-    // Шорты 3 (левое бедро) — поверх бедра 2
-    { file: 'parts/shorts3_fill.png',       tint: true,  group: 'shorts_leg', hideWithPants: true },
-    { file: 'parts/shorts3_outline.png',    tint: false, group: 'shorts_outline', hideWithPants: true },
+    { file: 'parts/shorts3_fill.png',       tint: true,  group: 'shorts' },
+    { file: 'parts/shorts3_outline.png',    tint: false, group: 'shorts_outline' },
     { file: 'parts/knee2_fill.png',         tint: true,  group: 'skin' },
     { file: 'parts/knee2_outline.png',      tint: false, group: 'outline' },
-    // ТУЛОВИЩЕ
     { file: 'parts/torso_fill.png',         tint: true,  group: 'skin' },
     { file: 'parts/torso_outline.png',      tint: false, group: 'outline' },
-    // Шорты 2 (тазовая часть) — поверх туловища, НЕ снимаются
-    { file: 'parts/shorts2_fill.png',       tint: true,  group: 'shorts_pelvis' },
-    { file: 'parts/shorts2_outline.png',    tint: false, group: 'shorts_pelvis_outline' },
-    // ПЕРЕДНИЕ ЧАСТИ
+    { file: 'parts/shorts2_fill.png',       tint: true,  group: 'shorts' },
+    { file: 'parts/shorts2_outline.png',    tint: false, group: 'shorts_outline' },
     { file: 'parts/hip_fill.png',           tint: true,  group: 'skin' },
     { file: 'parts/hip_outline.png',        tint: false, group: 'outline' },
-    // Шорты 1 (правое бедро) — поверх бедра 1
-    { file: 'parts/shorts1_fill.png',       tint: true,  group: 'shorts_leg', hideWithPants: true },
-    { file: 'parts/shorts1_outline.png',    tint: false, group: 'shorts_outline', hideWithPants: true },
+    { file: 'parts/shorts1_fill.png',       tint: true,  group: 'shorts' },
+    { file: 'parts/shorts1_outline.png',    tint: false, group: 'shorts_outline' },
     { file: 'parts/knee_fill.png',          tint: true,  group: 'skin' },
     { file: 'parts/knee_outline.png',       tint: false, group: 'outline' },
     { file: 'parts/shoulder_fill.png',      tint: true,  group: 'skin' },
     { file: 'parts/shoulder_outline.png',   tint: false, group: 'outline' },
     { file: 'parts/forearm_fill.png',       tint: true,  group: 'skin' },
     { file: 'parts/forearm_outline.png',    tint: false, group: 'outline' },
-    // ГОЛОВА
     { file: 'parts/head_fill.png',          tint: true,  group: 'skin' },
     { file: 'parts/head.png',               tint: false, group: 'outline' },
     { file: 'parts/ear_fill.png',           tint: true,  group: 'skin' },
@@ -42,48 +33,33 @@ const allLayers = [
     { file: 'parts/face.png',               tint: false, group: 'face' },
 ];
 
-// Слои по умолчанию (без скрытых)
-function getVisibleLayers(pantsEquipped) {
-    if (pantsEquipped) {
-        return allLayers.filter(l => !l.hideWithPants);
-    }
-    return allLayers;
-}
-
-// Загружаем все изображения
 const originalImages = {};
-let allLoaded = false;
-let onReadyCallback = null;
+const tintCache = {};
+let readyCallback = null;
 
-function loadAllImages(callback) {
-    let toLoad = allLayers.length;
+function loadAllImages(cb) {
     let loaded = 0;
-    allLayers.forEach(layer => {
-        if (originalImages[layer.file]) {
-            loaded++;
-            if (loaded === toLoad) finish();
-            return;
-        }
+    layers.forEach(layer => {
+        if (originalImages[layer.file]) { loaded++; check(); return; }
         const img = new Image();
-        img.crossOrigin = 'anonymous';
         img.src = layer.file;
-        img.onload = () => { loaded++; if (loaded === toLoad) finish(); };
-        img.onerror = () => { loaded++; console.warn('Не найден:', layer.file); if (loaded === toLoad) finish(); };
+        img.onload = () => { loaded++; check(); };
+        img.onerror = () => { loaded++; check(); };
         originalImages[layer.file] = img;
     });
-    function finish() {
-        allLoaded = true;
-        if (callback) callback();
-        if (onReadyCallback) onReadyCallback();
-    }
+    function check() { if (loaded >= layers.length && readyCallback) readyCallback(); }
+    readyCallback = cb;
 }
 
 function onReady(cb) {
-    if (allLoaded) cb();
-    else onReadyCallback = cb;
+    if (Object.keys(originalImages).length >= layers.length) cb();
+    else readyCallback = cb;
 }
 
 function applyTint(sourceImg, colorHex) {
+    const key = sourceImg.src + '_' + colorHex;
+    if (tintCache[key]) return tintCache[key];
+
     const canvas = document.createElement('canvas');
     canvas.width = canvasSize.w;
     canvas.height = canvasSize.h;
@@ -95,8 +71,7 @@ function applyTint(sourceImg, colorHex) {
     const gT = parseInt(colorHex.slice(3, 5), 16);
     const bT = parseInt(colorHex.slice(5, 7), 16);
     for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha > 0) {
+        if (data[i + 3] > 0) {
             const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
             const factor = gray / 255;
             data[i] = Math.round(rT * factor);
@@ -105,47 +80,48 @@ function applyTint(sourceImg, colorHex) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
-    return canvas.toDataURL();
+    tintCache[key] = canvas.toDataURL();
+    return tintCache[key];
 }
 
 function renderCharacter(container, charData) {
     const skin = charData.skinColor || '#F2E7CD';
     const outline = charData.outlineColor || '#3A2E2E';
-    const shortsColor = charData.shortsColor || charData.skinColor || '#F2E7CD'; // шорты 2 = цвет бедра
-    const shortsOutline = charData.shortsOutlineColor || charData.outlineColor || '#3A2E2E';
-    const pantsEquipped = charData.pantsEquipped || false;
+    const shorts = charData.shortsColor || '#8B6B4D';
+    const shortsOutline = charData.shortsOutlineColor || '#3A2E2E';
 
-    const layers = getVisibleLayers(pantsEquipped);
+    if (!container._initialized) {
+        container.innerHTML = '';
+        layers.forEach((layer, index) => {
+            const img = document.createElement('img');
+            img.style.position = 'absolute';
+            img.style.top = '0';
+            img.style.left = '0';
+            img.style.width = (canvasSize.w / 2) + 'px';
+            img.style.height = (canvasSize.h / 2) + 'px';
+            img.style.pointerEvents = 'none';
+            img.style.zIndex = index;
+            img.dataset.file = layer.file;
+            img.dataset.group = layer.group;
+            img.dataset.tint = layer.tint;
+            container.appendChild(img);
+        });
+        container._initialized = true;
+    }
 
-    container.innerHTML = '';
-    layers.forEach((layer, index) => {
-        const sourceImg = originalImages[layer.file];
-        if (!sourceImg) return;
-        const img = document.createElement('img');
-        img.style.position = 'absolute';
-        img.style.top = '0';
-        img.style.left = '0';
-        img.style.width = (canvasSize.w / 2) + 'px';
-        img.style.height = (canvasSize.h / 2) + 'px';
-        img.style.pointerEvents = 'none';
-        img.style.zIndex = index;
+    const allImgs = container.querySelectorAll('img');
+    allImgs.forEach(img => {
+        const file = img.dataset.file;
+        const group = img.dataset.group;
+        const tint = img.dataset.tint === 'true';
+        const srcImg = originalImages[file];
+        if (!srcImg) return;
 
-        let src;
-        if (layer.tint && (layer.group === 'skin' || layer.group === 'shorts_leg' || layer.group === 'shorts_pelvis')) {
-            // Заливка шорт красится в цвет шорт (цвет бедра)
-            src = applyTint(sourceImg, shortsColor);
-        } else if (!layer.tint && (layer.group === 'shorts_outline' || layer.group === 'shorts_pelvis_outline')) {
-            // Контур шорт красится в цвет контура шорт
-            src = applyTint(sourceImg, shortsOutline);
-        } else if (layer.tint && layer.group === 'skin') {
-            src = applyTint(sourceImg, skin);
-        } else if (!layer.tint && layer.group === 'outline') {
-            src = applyTint(sourceImg, outline);
-        } else {
-            src = sourceImg.src;
-        }
-        img.src = src;
-        container.appendChild(img);
+        if (group === 'skin' && tint) img.src = applyTint(srcImg, skin);
+        else if (group === 'outline' && !tint) img.src = applyTint(srcImg, outline);
+        else if (group === 'shorts' && tint) img.src = applyTint(srcImg, shorts);
+        else if (group === 'shorts_outline' && !tint) img.src = applyTint(srcImg, shortsOutline);
+        else img.src = srcImg.src;
     });
 }
 
@@ -156,34 +132,22 @@ function renderToCanvas(charData, scale = 1.0) {
     const ctx = canvas.getContext('2d');
     const skin = charData.skinColor || '#F2E7CD';
     const outline = charData.outlineColor || '#3A2E2E';
-    const shortsColor = charData.shortsColor || charData.skinColor || '#F2E7CD';
-    const shortsOutline = charData.shortsOutlineColor || charData.outlineColor || '#3A2E2E';
-    const pantsEquipped = charData.pantsEquipped || false;
-
-    const layers = getVisibleLayers(pantsEquipped);
+    const shorts = charData.shortsColor || '#8B6B4D';
+    const shortsOutline = charData.shortsOutlineColor || '#3A2E2E';
 
     layers.forEach(layer => {
-        const sourceImg = originalImages[layer.file];
-        if (!sourceImg) return;
+        const srcImg = originalImages[layer.file];
+        if (!srcImg) return;
         let src;
-        if (layer.tint && (layer.group === 'shorts_leg' || layer.group === 'shorts_pelvis')) {
-            src = applyTint(sourceImg, shortsColor);
-        } else if (!layer.tint && (layer.group === 'shorts_outline' || layer.group === 'shorts_pelvis_outline')) {
-            src = applyTint(sourceImg, shortsOutline);
-        } else if (layer.tint && layer.group === 'skin') {
-            src = applyTint(sourceImg, skin);
-        } else if (!layer.tint && layer.group === 'outline') {
-            src = applyTint(sourceImg, outline);
-        } else {
-            src = sourceImg.src;
-        }
+        if (layer.group === 'skin' && layer.tint) src = applyTint(srcImg, skin);
+        else if (layer.group === 'outline' && !layer.tint) src = applyTint(srcImg, outline);
+        else if (layer.group === 'shorts' && layer.tint) src = applyTint(srcImg, shorts);
+        else if (layer.group === 'shorts_outline' && !layer.tint) src = applyTint(srcImg, shortsOutline);
+        else src = srcImg.src;
         const img = new Image();
         img.src = src;
-        if (img.complete) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        } else {
-            img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
+        if (img.complete) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        else img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     });
     return canvas;
 }

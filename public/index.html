@@ -94,11 +94,6 @@
             width: 100%; outline: none;
         }
         .control-row input[type="text"]:focus { background: #6B5F62; }
-        .control-row input[type="checkbox"] {
-            width: 20px; height: 20px;
-            accent-color: #7A6B6E;
-            cursor: pointer;
-        }
         .btn-row { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
         .btn {
             background: #7A6B6E;
@@ -109,7 +104,6 @@
         .btn:hover { background: #8B7B7E; }
         .btn.green { background: #5A7D5A; }
         .btn.green:hover { background: #6B8E6B; }
-
         @media (max-width: 900px) {
             body { flex-direction: column; }
             .right-side { width: 100%; height: 40%; }
@@ -127,7 +121,6 @@
 
 <div class="right-side">
     <h2>РЕДАКТОР</h2>
-
     <div class="tab-buttons">
         <button class="tab-btn active" data-tab="body">Тело</button>
         <button class="tab-btn" data-tab="face">Лицо</button>
@@ -155,15 +148,11 @@
         </div>
         <div class="control-row">
             <label>Цвет шорт</label>
-            <input type="color" id="shortsColor" value="#F2E7CD">
+            <input type="color" id="shortsColor" value="#8B6B4D">
         </div>
         <div class="control-row">
             <label>Цвет контура шорт</label>
             <input type="color" id="shortsOutlineColor" value="#3A2E2E">
-        </div>
-        <div class="control-row">
-            <label>Надеть штаны</label>
-            <input type="checkbox" id="pantsToggle">
         </div>
     </div>
 
@@ -188,7 +177,6 @@
 
 <script src="character-renderer.js"></script>
 <script>
-    // Табы
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -204,7 +192,6 @@
         nicknameDisplay.textContent = nicknameInput.value || 'Гость';
     });
 
-    // Загрузка сохранённого
     const saved = JSON.parse(localStorage.getItem('tdop_character') || '{}');
     if (saved.nickname) { nicknameInput.value = saved.nickname; nicknameDisplay.textContent = saved.nickname; }
     if (saved.skinColor) document.getElementById('skinColor').value = saved.skinColor;
@@ -212,14 +199,12 @@
     if (saved.shortsColor) document.getElementById('shortsColor').value = saved.shortsColor;
     if (saved.shortsOutlineColor) document.getElementById('shortsOutlineColor').value = saved.shortsOutlineColor;
     if (saved.height) document.getElementById('heightSlider').value = saved.height;
-    if (saved.pantsEquipped !== undefined) document.getElementById('pantsToggle').checked = saved.pantsEquipped;
 
     let charData = {
         skinColor: saved.skinColor || '#F2E7CD',
         outlineColor: saved.outlineColor || '#3A2E2E',
-        shortsColor: saved.shortsColor || saved.skinColor || '#F2E7CD',
-        shortsOutlineColor: saved.shortsOutlineColor || saved.outlineColor || '#3A2E2E',
-        pantsEquipped: saved.pantsEquipped || false,
+        shortsColor: saved.shortsColor || '#8B6B4D',
+        shortsOutlineColor: saved.shortsOutlineColor || '#3A2E2E',
     };
 
     const characterContainer = document.getElementById('character');
@@ -255,10 +240,6 @@
     document.getElementById('heightSlider').addEventListener('input', (e) => {
         document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(e.target.value)})`;
     });
-    document.getElementById('pantsToggle').addEventListener('change', (e) => {
-        charData.pantsEquipped = e.target.checked;
-        rebuild();
-    });
 
     if (saved.height) {
         document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(saved.height)})`;
@@ -273,8 +254,7 @@
             outlineColor: charData.outlineColor,
             shortsColor: charData.shortsColor,
             shortsOutlineColor: charData.shortsOutlineColor,
-            height: document.getElementById('heightSlider').value,
-            pantsEquipped: charData.pantsEquipped
+            height: document.getElementById('heightSlider').value
         };
         localStorage.setItem('tdop_character', JSON.stringify(data));
         if (data.id) {
@@ -300,8 +280,7 @@
             outlineColor: charData.outlineColor,
             shortsColor: charData.shortsColor,
             shortsOutlineColor: charData.shortsOutlineColor,
-            height: document.getElementById('heightSlider').value,
-            pantsEquipped: charData.pantsEquipped
+            height: document.getElementById('heightSlider').value
         };
         localStorage.setItem('tdop_character', JSON.stringify(data));
         window.location.href = '/world';
