@@ -187,11 +187,11 @@
     if (saved.height) document.getElementById('heightSlider').value = saved.height;
 
     let charData = {
-        skinColor: document.getElementById('skinColor').value,
-        outlineColor: document.getElementById('outlineColor').value,
-        shortsColor: document.getElementById('shortsColor').value,
-        shortsOutlineColor: document.getElementById('shortsOutlineColor').value,
-    };
+    skinColor: document.getElementById('skinColor').value,
+    outlineColor: document.getElementById('outlineColor').value,
+    shortsColor: document.getElementById('shortsColor').value,
+    shortsOutlineColor: document.getElementById('shortsOutlineColor').value,
+};
 
     // === ПРОФИЛЬ ===
     if (userId) {
@@ -323,7 +323,7 @@
             skinColor: '#F2E7CD',
             outlineColor: '#3A2E2E',
             shortsColor: '#34292E',
-            shortsOutlineColor: '#34292E',
+            shortsOutlineColor: '#151012',
             height: 1.0
         };
         localStorage.setItem('tdop_character', JSON.stringify(saveData));

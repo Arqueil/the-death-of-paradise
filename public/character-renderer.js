@@ -58,27 +58,33 @@ function onReady(cb) {
 
 function applyTint(sourceImg, colorHex) {
     const key = sourceImg.src + '_' + colorHex;
-    if (tintCache[key]) return tintCache[key];
+    if (tintedCache[key]) return tintedCache[key];
 
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasSize.w;
-    canvas.height = canvasSize.h;
-    const ctx = canvas.getContext('2d');
+    const c = document.createElement('canvas');
+    c.width = canvasSize.w;
+    c.height = canvasSize.h;
+    const ctx = c.getContext('2d');
     ctx.drawImage(sourceImg, 0, 0);
     const imageData = ctx.getImageData(0, 0, canvasSize.w, canvasSize.h);
-    const data = imageData.data;
-    const rT = parseInt(colorHex.slice(1, 3), 16);
-    const gT = parseInt(colorHex.slice(3, 5), 16);
-    const bT = parseInt(colorHex.slice(5, 7), 16);
-    for (let i = 0; i < data.length; i += 4) {
-        if (data[i + 3] > 0) {
-            const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            const factor = gray / 255;
-            data[i] = Math.round(rT * factor);
-            data[i + 1] = Math.round(gT * factor);
-            data[i + 2] = Math.round(bT * factor);
+    const d = imageData.data;
+    const r = parseInt(colorHex.slice(1,3), 16);
+    const g = parseInt(colorHex.slice(3,5), 16);
+    const b = parseInt(colorHex.slice(5,7), 16);
+
+    for (let i = 0; i < d.length; i += 4) {
+        if (d[i+3] > 0) {
+            // Берём альфу исходного пикселя как силу цвета
+            const alpha = d[i+3] / 255;
+            d[i] = Math.round(r * alpha);
+            d[i+1] = Math.round(g * alpha);
+            d[i+2] = Math.round(b * alpha);
+            // Альфу не трогаем
         }
     }
+    ctx.putImageData(imageData, 0, 0);
+    tintedCache[key] = c.toDataURL();
+    return tintedCache[key];
+}
     ctx.putImageData(imageData, 0, 0);
     tintCache[key] = canvas.toDataURL();
     return tintCache[key];
