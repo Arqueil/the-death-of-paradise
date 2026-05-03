@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>The Death of Paradise — Редактор персонажа</title>
+    <title>The Death of Paradise — Редактор</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -27,7 +27,6 @@
             color: #fff;
             margin-bottom: 12px;
             letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
         .character-wrapper {
             position: relative;
@@ -38,78 +37,53 @@
         }
         .character-wrapper img {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 496px;
-            height: 602px;
+            top: 0; left: 0;
+            width: 496px; height: 602px;
             pointer-events: none;
         }
         .right-side {
             width: 340px;
             background: #3A3436;
-            padding: 30px 20px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             overflow-y: auto;
             box-shadow: -4px 0 20px rgba(0,0,0,0.4);
         }
-        .right-side h2 {
-            color: #fff;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        .tab-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 15px; }
+        h2, h3 { color: #fff; letter-spacing: 1px; margin-bottom: 5px; }
+        .tab-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
         .tab-btn {
-            background: #5C5154;
-            border: none;
-            color: #ccc;
-            padding: 8px 14px;
-            cursor: pointer;
-            font-size: 13px;
-            letter-spacing: 1px;
-            transition: 0.2s;
+            background: #5C5154; border: none; color: #ccc;
+            padding: 6px 12px; cursor: pointer; font-size: 12px; letter-spacing: 1px;
         }
         .tab-btn:hover, .tab-btn.active { background: #7A6B6E; color: #fff; }
-        .tab-content { display: none; flex-direction: column; gap: 12px; }
+        .tab-content { display: none; flex-direction: column; gap: 10px; }
         .tab-content.active { display: flex; }
         .control-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
         }
-        .control-row label { font-size: 13px; color: #bbb; min-width: 100px; }
+        .control-row label { font-size: 12px; color: #bbb; min-width: 100px; }
         .control-row input[type="range"] { flex: 1; accent-color: #7A6B6E; }
         .control-row input[type="color"] {
-            width: 36px; height: 28px;
-            border: 1px solid #5C5154;
+            width: 32px; height: 24px; border: 1px solid #5C5154;
             background: transparent; cursor: pointer;
         }
-        .control-row input[type="text"] {
-            background: #5C5154;
-            border: none; color: #fff;
-            padding: 6px 10px; font-size: 13px;
-            width: 100%; outline: none;
+        .control-row input[type="text"], .control-row input[type="password"] {
+            background: #5C5154; border: none; color: #fff;
+            padding: 6px 8px; font-size: 12px; width: 100%; outline: none;
         }
-        .control-row input[type="text"]:focus { background: #6B5F62; }
-        .btn-row { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
         .btn {
-            background: #7A6B6E;
-            border: none; color: #fff;
-            padding: 10px 20px; cursor: pointer;
-            letter-spacing: 1px; font-size: 14px; transition: 0.2s;
+            background: #7A6B6E; border: none; color: #fff;
+            padding: 8px 16px; cursor: pointer; font-size: 13px; letter-spacing: 1px;
         }
         .btn:hover { background: #8B7B7E; }
         .btn.green { background: #5A7D5A; }
         .btn.green:hover { background: #6B8E6B; }
-        @media (max-width: 900px) {
-            body { flex-direction: column; }
-            .right-side { width: 100%; height: 40%; }
-            .left-side { height: 60%; }
-            .character-wrapper { transform: scale(0.6); }
-        }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .error { color: #E57373; font-size: 12px; }
+        .success { color: #81C784; font-size: 12px; }
+        hr { border-color: #5C5154; margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -120,7 +94,28 @@
 </div>
 
 <div class="right-side">
-    <h2>РЕДАКТОР</h2>
+    <!-- Блок авторизации -->
+    <div id="authBlock">
+        <h3>ВХОД / РЕГИСТРАЦИЯ</h3>
+        <input type="text" id="authUser" placeholder="Логин">
+        <input type="password" id="authPass" placeholder="Пароль">
+        <input type="text" id="authNick" placeholder="Ник (для регистрации)">
+        <div class="error" id="authError"></div>
+        <div class="btn-row">
+            <button class="btn" id="btnLogin">Войти</button>
+            <button class="btn green" id="btnRegister">Регистрация</button>
+        </div>
+        <hr>
+    </div>
+
+    <!-- Блок профиля (скрыт до входа) -->
+    <div id="profileBlock" style="display:none;">
+        <span style="color:#81C784;">✔ Вы вошли как <b id="profileName"></b></span>
+        <button class="btn" id="btnLogout" style="margin-top:5px;">Выйти</button>
+        <hr>
+    </div>
+
+    <h3>РЕДАКТОР</h3>
     <div class="tab-buttons">
         <button class="tab-btn active" data-tab="body">Тело</button>
         <button class="tab-btn" data-tab="face">Лицо</button>
@@ -130,44 +125,17 @@
     </div>
 
     <div class="tab-content active" id="tab-body">
-        <div class="control-row">
-            <label>Рост</label>
-            <input type="range" id="heightSlider" min="0.7" max="1.3" step="0.01" value="1">
-        </div>
-        <div class="control-row">
-            <label>Ник</label>
-            <input type="text" id="nicknameInput" value="Гость" maxlength="16">
-        </div>
-        <div class="control-row">
-            <label>Цвет кожи</label>
-            <input type="color" id="skinColor" value="#F2E7CD">
-        </div>
-        <div class="control-row">
-            <label>Цвет контура</label>
-            <input type="color" id="outlineColor" value="#3A2E2E">
-        </div>
-        <div class="control-row">
-            <label>Цвет шорт</label>
-            <input type="color" id="shortsColor" value="#8B6B4D">
-        </div>
-        <div class="control-row">
-            <label>Цвет контура шорт</label>
-            <input type="color" id="shortsOutlineColor" value="#3A2E2E">
-        </div>
+        <div class="control-row"><label>Рост</label><input type="range" id="heightSlider" min="0.7" max="1.3" step="0.01" value="1"></div>
+        <div class="control-row"><label>Ник</label><input type="text" id="nicknameInput" value="Гость" maxlength="16"></div>
+        <div class="control-row"><label>Цвет кожи</label><input type="color" id="skinColor" value="#F2E7CD"></div>
+        <div class="control-row"><label>Цвет контура</label><input type="color" id="outlineColor" value="#3A2E2E"></div>
+        <div class="control-row"><label>Цвет шорт</label><input type="color" id="shortsColor" value="#34292E"></div>
+        <div class="control-row"><label>Цвет контура шорт</label><input type="color" id="shortsOutlineColor" value="#34292E"></div>
     </div>
-
-    <div class="tab-content" id="tab-face">
-        <p style="font-size:13px;color:#888;">Лицо без составных частей (пробный манекен)</p>
-    </div>
-    <div class="tab-content" id="tab-hair">
-        <p style="font-size:13px;color:#888;">Пока нет волос</p>
-    </div>
-    <div class="tab-content" id="tab-clothes">
-        <p style="font-size:13px;color:#888;">Пока нет одежды</p>
-    </div>
-    <div class="tab-content" id="tab-accessories">
-        <p style="font-size:13px;color:#888;">Пока нет аксессуаров</p>
-    </div>
+    <div class="tab-content" id="tab-face"><p style="font-size:12px;color:#888;">Лицо (пробный манекен)</p></div>
+    <div class="tab-content" id="tab-hair"><p style="font-size:12px;color:#888;">Волосы (скоро)</p></div>
+    <div class="tab-content" id="tab-clothes"><p style="font-size:12px;color:#888;">Одежда (скоро)</p></div>
+    <div class="tab-content" id="tab-accessories"><p style="font-size:12px;color:#888;">Аксессуары (скоро)</p></div>
 
     <div class="btn-row">
         <button class="btn" id="btnSave">Сохранить</button>
@@ -177,6 +145,7 @@
 
 <script src="character-renderer.js"></script>
 <script>
+    // === ТАБЫ ===
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -186,27 +155,102 @@
         });
     });
 
+    // === ИНТЕРФЕЙС ===
     const nicknameInput = document.getElementById('nicknameInput');
     const nicknameDisplay = document.getElementById('nicknameDisplay');
     nicknameInput.addEventListener('input', () => {
         nicknameDisplay.textContent = nicknameInput.value || 'Гость';
     });
 
+    // === ЗАГРУЗКА ДАННЫХ ===
     const saved = JSON.parse(localStorage.getItem('tdop_character') || '{}');
+    let userId = saved.id || null;
+
     if (saved.nickname) { nicknameInput.value = saved.nickname; nicknameDisplay.textContent = saved.nickname; }
     if (saved.skinColor) document.getElementById('skinColor').value = saved.skinColor;
+    else document.getElementById('skinColor').value = '#F2E7CD';
     if (saved.outlineColor) document.getElementById('outlineColor').value = saved.outlineColor;
+    else document.getElementById('outlineColor').value = '#3A2E2E';
     if (saved.shortsColor) document.getElementById('shortsColor').value = saved.shortsColor;
+    else document.getElementById('shortsColor').value = '#34292E';
     if (saved.shortsOutlineColor) document.getElementById('shortsOutlineColor').value = saved.shortsOutlineColor;
+    else document.getElementById('shortsOutlineColor').value = '#34292E';
     if (saved.height) document.getElementById('heightSlider').value = saved.height;
 
     let charData = {
-        skinColor: saved.skinColor || '#F2E7CD',
-        outlineColor: saved.outlineColor || '#3A2E2E',
-        shortsColor: saved.shortsColor || '#8B6B4D',
-        shortsOutlineColor: saved.shortsOutlineColor || '#3A2E2E',
+        skinColor: document.getElementById('skinColor').value,
+        outlineColor: document.getElementById('outlineColor').value,
+        shortsColor: document.getElementById('shortsColor').value,
+        shortsOutlineColor: document.getElementById('shortsOutlineColor').value,
     };
 
+    // === ПРОФИЛЬ ===
+    if (userId) {
+        document.getElementById('authBlock').style.display = 'none';
+        document.getElementById('profileBlock').style.display = 'block';
+        document.getElementById('profileName').textContent = saved.nickname || 'Игрок';
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+        localStorage.removeItem('tdop_character');
+        location.reload();
+    });
+
+    // === АВТОРИЗАЦИЯ ===
+    async function api(url, body) {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        return res.json();
+    }
+
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+        const u = document.getElementById('authUser').value.trim();
+        const p = document.getElementById('authPass').value.trim();
+        const err = document.getElementById('authError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
+        const data = await api('/api/login', { username: u, password: p });
+        if (data.error) { err.textContent = data.error; return; }
+        const saveData = {
+            id: data.user.id,
+            nickname: data.user.nickname,
+            skinColor: data.user.skinColor,
+            outlineColor: data.user.outlineColor,
+            shortsColor: data.user.shortsColor || '#34292E',
+            shortsOutlineColor: data.user.shortsOutlineColor || '#34292E',
+            height: data.user.height
+        };
+        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        location.reload();
+    });
+
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+        const u = document.getElementById('authUser').value.trim();
+        const p = document.getElementById('authPass').value.trim();
+        const n = document.getElementById('authNick').value.trim();
+        const err = document.getElementById('authError');
+        err.textContent = '';
+        if (!u || !p || !n) { err.textContent = 'Заполни все поля'; return; }
+        if (p.length < 3) { err.textContent = 'Пароль от 3 символов'; return; }
+        const data = await api('/api/register', { username: u, password: p, nickname: n });
+        if (data.error) { err.textContent = data.error; return; }
+        const saveData = {
+            id: data.id,
+            nickname: n,
+            skinColor: '#F2E7CD',
+            outlineColor: '#3A2E2E',
+            shortsColor: '#34292E',
+            shortsOutlineColor: '#34292E',
+            height: 1.0
+        };
+        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        location.reload();
+    });
+
+    // === ПЕРСОНАЖ ===
     const characterContainer = document.getElementById('character');
     let rebuildTimeout = null;
 
@@ -220,22 +264,22 @@
     document.getElementById('skinColor').addEventListener('input', (e) => {
         charData.skinColor = e.target.value;
         clearTimeout(rebuildTimeout);
-        rebuildTimeout = setTimeout(rebuild, 50);
+        rebuildTimeout = setTimeout(rebuild, 30);
     });
     document.getElementById('outlineColor').addEventListener('input', (e) => {
         charData.outlineColor = e.target.value;
         clearTimeout(rebuildTimeout);
-        rebuildTimeout = setTimeout(rebuild, 50);
+        rebuildTimeout = setTimeout(rebuild, 30);
     });
     document.getElementById('shortsColor').addEventListener('input', (e) => {
         charData.shortsColor = e.target.value;
         clearTimeout(rebuildTimeout);
-        rebuildTimeout = setTimeout(rebuild, 50);
+        rebuildTimeout = setTimeout(rebuild, 30);
     });
     document.getElementById('shortsOutlineColor').addEventListener('input', (e) => {
         charData.shortsOutlineColor = e.target.value;
         clearTimeout(rebuildTimeout);
-        rebuildTimeout = setTimeout(rebuild, 50);
+        rebuildTimeout = setTimeout(rebuild, 30);
     });
     document.getElementById('heightSlider').addEventListener('input', (e) => {
         document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(e.target.value)})`;
@@ -245,10 +289,10 @@
         document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(saved.height)})`;
     }
 
+    // === КНОПКИ ===
     document.getElementById('btnSave').addEventListener('click', async () => {
-        const savedLocal = JSON.parse(localStorage.getItem('tdop_character') || '{}');
         const data = {
-            id: savedLocal.id,
+            id: userId,
             nickname: nicknameInput.value || 'Гость',
             skinColor: charData.skinColor,
             outlineColor: charData.outlineColor,
@@ -258,23 +302,17 @@
         };
         localStorage.setItem('tdop_character', JSON.stringify(data));
         if (data.id) {
-            try {
-                const res = await fetch('/api/save_appearance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const resp = await res.json();
-                if (resp.success) { alert('Персонаж сохранён на сервере!'); }
-                else { alert('Сохранено локально (ошибка сервера)'); }
-            } catch (e) { alert('Сохранено локально (сервер недоступен)'); }
-        } else { alert('Персонаж сохранён локально (войдите для сохранения на сервер)'); }
+            const resp = await api('/api/save_appearance', data);
+            if (resp.success) alert('Сохранено на сервере!');
+            else alert('Сохранено локально (ошибка сервера)');
+        } else {
+            alert('Сохранено локально (войдите для сохранения на сервер)');
+        }
     });
 
     document.getElementById('btnEnter').addEventListener('click', () => {
-        const savedLocal = JSON.parse(localStorage.getItem('tdop_character') || '{}');
         const data = {
-            id: savedLocal.id,
+            id: userId,
             nickname: nicknameInput.value || 'Гость',
             skinColor: charData.skinColor,
             outlineColor: charData.outlineColor,
