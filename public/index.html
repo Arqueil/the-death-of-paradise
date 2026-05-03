@@ -95,15 +95,24 @@
 
 <div class="right-side">
     <!-- Блок авторизации -->
-    <div id="authBlock">
+        <div id="authBlock">
         <h3>ВХОД / РЕГИСТРАЦИЯ</h3>
         <input type="text" id="authUser" placeholder="Логин">
         <input type="password" id="authPass" placeholder="Пароль">
-        <input type="text" id="authNick" placeholder="Ник (для регистрации)">
         <div class="error" id="authError"></div>
         <div class="btn-row">
             <button class="btn" id="btnLogin">Войти</button>
             <button class="btn green" id="btnRegister">Регистрация</button>
+        </div>
+        <a href="#" id="forgotLink" style="font-size:12px;color:#888;">Забыли пароль?</a>
+        <div id="forgotBlock" style="display:none;margin-top:8px;">
+            <input type="text" id="forgotUser" placeholder="Логин">
+            <button class="btn" id="btnForgot" style="font-size:12px;padding:4px 8px;">Получить код</button>
+            <div id="resetBlock" style="display:none;margin-top:5px;">
+                <input type="text" id="resetCode" placeholder="Код из письма/консоли">
+                <input type="password" id="resetPass" placeholder="Новый пароль">
+                <button class="btn green" id="btnReset" style="font-size:12px;padding:4px 8px;">Сменить пароль</button>
+            </div>
         </div>
         <hr>
     </div>
@@ -197,6 +206,7 @@
     });
 
     // === АВТОРИЗАЦИЯ ===
+       // === АВТОРИЗАЦИЯ ===
     async function api(url, body) {
         const res = await fetch(url, {
             method: 'POST',
@@ -206,6 +216,76 @@
         return res.json();
     }
 
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+        const u = document.getElementById('authUser').value.trim();
+        const p = document.getElementById('authPass').value.trim();
+        const err = document.getElementById('authError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
+        const data = await api('/api/login', { username: u, password: p });
+        if (data.error) { err.textContent = data.error; return; }
+        const saveData = {
+            id: data.user.id,
+            nickname: data.user.nickname,
+            skinColor: data.user.skinColor,
+            outlineColor: data.user.outlineColor,
+            shortsColor: data.user.shortsColor || '#34292E',
+            shortsOutlineColor: data.user.shortsOutlineColor || '#34292E',
+            height: data.user.height
+        };
+        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        location.reload();
+    });
+
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+        const u = document.getElementById('authUser').value.trim();
+        const p = document.getElementById('authPass').value.trim();
+        const err = document.getElementById('authError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
+        if (p.length < 3) { err.textContent = 'Пароль от 3 символов'; return; }
+        const data = await api('/api/register', { username: u, password: p });
+        if (data.error) { err.textContent = data.error; return; }
+        const saveData = {
+            id: data.id,
+            nickname: u,
+            skinColor: '#F2E7CD',
+            outlineColor: '#3A2E2E',
+            shortsColor: '#34292E',
+            shortsOutlineColor: '#34292E',
+            height: 1.0
+        };
+        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        location.reload();
+    });
+
+    // Забыли пароль
+    document.getElementById('forgotLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('forgotBlock').style.display = 'block';
+    });
+    document.getElementById('btnForgot').addEventListener('click', async () => {
+        const u = document.getElementById('forgotUser').value.trim();
+        const err = document.getElementById('authError');
+        err.textContent = '';
+        if (!u) { err.textContent = 'Введи логин'; return; }
+        const data = await api('/api/forgot', { username: u });
+        if (data.error) { err.textContent = data.error; return; }
+        document.getElementById('resetBlock').style.display = 'block';
+        alert('Код восстановления: ' + data.token + '\n\n(В реальной игре будет отправка на почту)');
+    });
+    document.getElementById('btnReset').addEventListener('click', async () => {
+        const u = document.getElementById('forgotUser').value.trim();
+        const t = document.getElementById('resetCode').value.trim();
+        const p = document.getElementById('resetPass').value.trim();
+        const err = document.getElementById('authError');
+        err.textContent = '';
+        if (!u || !t || !p) { err.textContent = 'Заполни все поля'; return; }
+        const data = await api('/api/reset', { username: u, token: t, newPassword: p });
+        if (data.error) { err.textContent = data.error; return; }
+        alert('Пароль изменён! Войдите с новым паролем.');
+        location.reload();
+    });
     document.getElementById('btnLogin').addEventListener('click', async () => {
         const u = document.getElementById('authUser').value.trim();
         const p = document.getElementById('authPass').value.trim();
