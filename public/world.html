@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>The Death of Paradise — Мир</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #7A7A7A;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        canvas { display: block; background: #9E9E9E; }
+
+        #chatBox {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            width: 300px;
+            max-height: 220px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 12px 6px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 60px;
+            pointer-events: auto;
+        }
+        #chatMessages .msg {
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        #chatMessages .nick {
+            color: #FFD180;
+            margin-right: 6px;
+        }
+        #chatMessages .time {
+            color: #999;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+        #chatInputRow {
+            display: flex;
+            pointer-events: auto;
+        }
+        #chatInput {
+            flex: 1;
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-top: 1px solid #555;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 13px;
+            outline: none;
+        }
+        #chatInput::placeholder { color: #999; }
+        #chatBtn {
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-top: 1px solid #555;
+            color: #ccc;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        #chatBtn:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+<div id="chatBox">
+    <div id="chatMessages"></div>
+    <div id="chatInputRow">
+        <input type="text" id="chatInput" placeholder="Напиши сообщение..." maxlength="200">
+        <button id="chatBtn">Отпр.</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="character-renderer.js"></script>
+<script>
+    const socket = io();
+    const canvas = document.createElement('canvas');
+    canvas.style.display = 'block';
+    canvas.style.background = '#9E9E9E';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const charData = JSON.parse(localStorage.getItem('tdop_character') || '{}');
+    const nickname = charData.nickname || 'Гость';
+    const heightScale = parseFloat(charData.height || '1');
+
+    let playerX = canvas.width / 2;
+    let playerY = canvas.height / 2;
+    const speed = 3;
+    const keys = {};
+
+    document.addEventListener('keydown', (e) => {
+        keys[e.key.toLowerCase()] = true;
+        // Чат — Enter
+        if (document.activeElement === document.getElementById('chatInput')) return;
+        if (e.key === 'Enter') {
+            document.getElementById('chatInput').focus();
+        }
+        if (!['w','a','s','d','ц','ф','ы','в'].includes(e.key.toLowerCase())) return;
+        e.preventDefault();
+    });
+    document.addEventListener('keyup', (e) => {
+        keys[e.key.toLowerCase()] = false;
+    });
+
+    let charCanvas = null;
+    function updateCharCanvas() {
+        if (charData.skinColor) {
+            charCanvas = renderToCanvas(charData, 0.25 * heightScale);
+        }
+    }
+    onReady(updateCharCanvas);
+    loadAllImages(updateCharCanvas);
+
+    // ===== ЧАТ =====
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatBtn = document.getElementById('chatBtn');
+
+    function sendMessage() {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+        socket.emit('chat_message', { nickname, message: msg });
+        chatInput.value = '';
+    }
+    chatBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    socket.on('chat_message', (data) => {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.innerHTML = `<span class="time">${data.time}</span><span class="nick">${data.nickname}:</span>${data.message}`;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Максимум 50 сообщений
+        while (chatMessages.children.length > 50) {
+            chatMessages.removeChild(chatMessages.firstChild);
+        }
+    });
+
+    // ===== ИГРОВОЙ ЦИКЛ =====
+    function loop() {
+        if (document.activeElement !== chatInput) {
+            if (keys['w'] || keys['ц']) playerY -= speed;
+            if (keys['s'] || keys['ы']) playerY += speed;
+            if (keys['a'] || keys['ф']) playerX -= speed;
+            if (keys['d'] || keys['в']) playerX += speed;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (charCanvas) {
+            const w = charCanvas.width;
+            const h = charCanvas.height;
+            ctx.drawImage(charCanvas, playerX - w/2, playerY - h/2, w, h);
+        } else {
+            ctx.fillStyle = '#F2E7CD';
+            ctx.fillRect(playerX - 16, playerY - 16, 32, 32);
+        }
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(nickname, playerX, playerY - (charCanvas ? charCanvas.height/2 + 10 : 30));
+
+        requestAnimationFrame(loop);
+    }
+    loop();
+</script>
+</body>
+</html>

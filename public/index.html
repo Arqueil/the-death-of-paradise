@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>The Death of Paradise — Редактор персонажа</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #453D40;
+            color: #ccc;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        .left-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .nickname {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        .character-wrapper {
+            position: relative;
+            width: 496px;
+            height: 602px;
+            transform: scale(0.85);
+            transform-origin: center center;
+        }
+        .character-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 496px;
+            height: 602px;
+            pointer-events: none;
+        }
+        .right-side {
+            width: 340px;
+            background: #3A3436;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.4);
+        }
+        .right-side h2 {
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .tab-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 15px; }
+        .tab-btn {
+            background: #5C5154;
+            border: none;
+            color: #ccc;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            letter-spacing: 1px;
+            transition: 0.2s;
+        }
+        .tab-btn:hover, .tab-btn.active { background: #7A6B6E; color: #fff; }
+        .tab-content { display: none; flex-direction: column; gap: 12px; }
+        .tab-content.active { display: flex; }
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .control-row label { font-size: 13px; color: #bbb; min-width: 100px; }
+        .control-row input[type="range"] { flex: 1; accent-color: #7A6B6E; }
+        .control-row input[type="color"] {
+            width: 36px; height: 28px;
+            border: 1px solid #5C5154;
+            background: transparent; cursor: pointer;
+        }
+        .control-row input[type="text"] {
+            background: #5C5154;
+            border: none; color: #fff;
+            padding: 6px 10px; font-size: 13px;
+            width: 100%; outline: none;
+        }
+        .control-row input[type="text"]:focus { background: #6B5F62; }
+        .control-row input[type="checkbox"] {
+            width: 20px; height: 20px;
+            accent-color: #7A6B6E;
+            cursor: pointer;
+        }
+        .btn-row { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            background: #7A6B6E;
+            border: none; color: #fff;
+            padding: 10px 20px; cursor: pointer;
+            letter-spacing: 1px; font-size: 14px; transition: 0.2s;
+        }
+        .btn:hover { background: #8B7B7E; }
+        .btn.green { background: #5A7D5A; }
+        .btn.green:hover { background: #6B8E6B; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .right-side { width: 100%; height: 40%; }
+            .left-side { height: 60%; }
+            .character-wrapper { transform: scale(0.6); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="left-side">
+    <div class="nickname" id="nicknameDisplay">Гость</div>
+    <div class="character-wrapper" id="character"></div>
+</div>
+
+<div class="right-side">
+    <h2>РЕДАКТОР</h2>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="body">Тело</button>
+        <button class="tab-btn" data-tab="face">Лицо</button>
+        <button class="tab-btn" data-tab="hair">Волосы</button>
+        <button class="tab-btn" data-tab="clothes">Одежда</button>
+        <button class="tab-btn" data-tab="accessories">Аксессуары</button>
+    </div>
+
+    <div class="tab-content active" id="tab-body">
+        <div class="control-row">
+            <label>Рост</label>
+            <input type="range" id="heightSlider" min="0.7" max="1.3" step="0.01" value="1">
+        </div>
+        <div class="control-row">
+            <label>Ник</label>
+            <input type="text" id="nicknameInput" value="Гость" maxlength="16">
+        </div>
+        <div class="control-row">
+            <label>Цвет кожи</label>
+            <input type="color" id="skinColor" value="#F2E7CD">
+        </div>
+        <div class="control-row">
+            <label>Цвет контура</label>
+            <input type="color" id="outlineColor" value="#3A2E2E">
+        </div>
+        <div class="control-row">
+            <label>Цвет шорт</label>
+            <input type="color" id="shortsColor" value="#F2E7CD">
+        </div>
+        <div class="control-row">
+            <label>Цвет контура шорт</label>
+            <input type="color" id="shortsOutlineColor" value="#3A2E2E">
+        </div>
+        <div class="control-row">
+            <label>Надеть штаны</label>
+            <input type="checkbox" id="pantsToggle">
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-face">
+        <p style="font-size:13px;color:#888;">Лицо без составных частей (пробный манекен)</p>
+    </div>
+    <div class="tab-content" id="tab-hair">
+        <p style="font-size:13px;color:#888;">Пока нет волос</p>
+    </div>
+    <div class="tab-content" id="tab-clothes">
+        <p style="font-size:13px;color:#888;">Пока нет одежды</p>
+    </div>
+    <div class="tab-content" id="tab-accessories">
+        <p style="font-size:13px;color:#888;">Пока нет аксессуаров</p>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn" id="btnSave">Сохранить</button>
+        <button class="btn green" id="btnEnter">Войти в мир</button>
+    </div>
+</div>
+
+<script src="character-renderer.js"></script>
+<script>
+    // Табы
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        });
+    });
+
+    const nicknameInput = document.getElementById('nicknameInput');
+    const nicknameDisplay = document.getElementById('nicknameDisplay');
+    nicknameInput.addEventListener('input', () => {
+        nicknameDisplay.textContent = nicknameInput.value || 'Гость';
+    });
+
+    // Загрузка сохранённого
+    const saved = JSON.parse(localStorage.getItem('tdop_character') || '{}');
+    if (saved.nickname) { nicknameInput.value = saved.nickname; nicknameDisplay.textContent = saved.nickname; }
+    if (saved.skinColor) document.getElementById('skinColor').value = saved.skinColor;
+    if (saved.outlineColor) document.getElementById('outlineColor').value = saved.outlineColor;
+    if (saved.shortsColor) document.getElementById('shortsColor').value = saved.shortsColor;
+    if (saved.shortsOutlineColor) document.getElementById('shortsOutlineColor').value = saved.shortsOutlineColor;
+    if (saved.height) document.getElementById('heightSlider').value = saved.height;
+    if (saved.pantsEquipped !== undefined) document.getElementById('pantsToggle').checked = saved.pantsEquipped;
+
+    let charData = {
+        skinColor: saved.skinColor || '#F2E7CD',
+        outlineColor: saved.outlineColor || '#3A2E2E',
+        shortsColor: saved.shortsColor || saved.skinColor || '#F2E7CD',
+        shortsOutlineColor: saved.shortsOutlineColor || saved.outlineColor || '#3A2E2E',
+        pantsEquipped: saved.pantsEquipped || false,
+    };
+
+    const characterContainer = document.getElementById('character');
+    let rebuildTimeout = null;
+
+    function rebuild() {
+        renderCharacter(characterContainer, charData);
+    }
+
+    onReady(rebuild);
+    loadAllImages(rebuild);
+
+    document.getElementById('skinColor').addEventListener('input', (e) => {
+        charData.skinColor = e.target.value;
+        clearTimeout(rebuildTimeout);
+        rebuildTimeout = setTimeout(rebuild, 50);
+    });
+    document.getElementById('outlineColor').addEventListener('input', (e) => {
+        charData.outlineColor = e.target.value;
+        clearTimeout(rebuildTimeout);
+        rebuildTimeout = setTimeout(rebuild, 50);
+    });
+    document.getElementById('shortsColor').addEventListener('input', (e) => {
+        charData.shortsColor = e.target.value;
+        clearTimeout(rebuildTimeout);
+        rebuildTimeout = setTimeout(rebuild, 50);
+    });
+    document.getElementById('shortsOutlineColor').addEventListener('input', (e) => {
+        charData.shortsOutlineColor = e.target.value;
+        clearTimeout(rebuildTimeout);
+        rebuildTimeout = setTimeout(rebuild, 50);
+    });
+    document.getElementById('heightSlider').addEventListener('input', (e) => {
+        document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(e.target.value)})`;
+    });
+    document.getElementById('pantsToggle').addEventListener('change', (e) => {
+        charData.pantsEquipped = e.target.checked;
+        rebuild();
+    });
+
+    if (saved.height) {
+        document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(saved.height)})`;
+    }
+
+    document.getElementById('btnSave').addEventListener('click', async () => {
+        const savedLocal = JSON.parse(localStorage.getItem('tdop_character') || '{}');
+        const data = {
+            id: savedLocal.id,
+            nickname: nicknameInput.value || 'Гость',
+            skinColor: charData.skinColor,
+            outlineColor: charData.outlineColor,
+            shortsColor: charData.shortsColor,
+            shortsOutlineColor: charData.shortsOutlineColor,
+            height: document.getElementById('heightSlider').value,
+            pantsEquipped: charData.pantsEquipped
+        };
+        localStorage.setItem('tdop_character', JSON.stringify(data));
+        if (data.id) {
+            try {
+                const res = await fetch('/api/save_appearance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const resp = await res.json();
+                if (resp.success) { alert('Персонаж сохранён на сервере!'); }
+                else { alert('Сохранено локально (ошибка сервера)'); }
+            } catch (e) { alert('Сохранено локально (сервер недоступен)'); }
+        } else { alert('Персонаж сохранён локально (войдите для сохранения на сервер)'); }
+    });
+
+    document.getElementById('btnEnter').addEventListener('click', () => {
+        const savedLocal = JSON.parse(localStorage.getItem('tdop_character') || '{}');
+        const data = {
+            id: savedLocal.id,
+            nickname: nicknameInput.value || 'Гость',
+            skinColor: charData.skinColor,
+            outlineColor: charData.outlineColor,
+            shortsColor: charData.shortsColor,
+            shortsOutlineColor: charData.shortsOutlineColor,
+            height: document.getElementById('heightSlider').value,
+            pantsEquipped: charData.pantsEquipped
+        };
+        localStorage.setItem('tdop_character', JSON.stringify(data));
+        window.location.href = '/world';
+    });
+</script>
+</body>
+</html>
