@@ -59,7 +59,6 @@ function onReady(cb) {
 function applyTint(sourceImg, colorHex) {
     const key = sourceImg.src + '_' + colorHex;
     if (tintedCache[key]) return tintedCache[key];
-
     const c = document.createElement('canvas');
     c.width = canvasSize.w;
     c.height = canvasSize.h;
@@ -70,24 +69,18 @@ function applyTint(sourceImg, colorHex) {
     const r = parseInt(colorHex.slice(1,3), 16);
     const g = parseInt(colorHex.slice(3,5), 16);
     const b = parseInt(colorHex.slice(5,7), 16);
-
     for (let i = 0; i < d.length; i += 4) {
         if (d[i+3] > 0) {
-            // Берём альфу исходного пикселя как силу цвета
-            const alpha = d[i+3] / 255;
-            d[i] = Math.round(r * alpha);
-            d[i+1] = Math.round(g * alpha);
-            d[i+2] = Math.round(b * alpha);
-            // Альфу не трогаем
+            const gray = (d[i] + d[i+1] + d[i+2]) / 3;
+            const f = gray / 255;
+            d[i] = Math.round(r * f);
+            d[i+1] = Math.round(g * f);
+            d[i+2] = Math.round(b * f);
         }
     }
     ctx.putImageData(imageData, 0, 0);
     tintedCache[key] = c.toDataURL();
     return tintedCache[key];
-}
-    ctx.putImageData(imageData, 0, 0);
-    tintCache[key] = canvas.toDataURL();
-    return tintCache[key];
 }
 
 function renderCharacter(container, charData) {
