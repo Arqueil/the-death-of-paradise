@@ -84,6 +84,7 @@
         .error { color: #E57373; font-size: 12px; }
         .success { color: #81C784; font-size: 12px; }
         hr { border-color: #5C5154; margin: 5px 0; }
+        a { color: #888; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -94,8 +95,7 @@
 </div>
 
 <div class="right-side">
-    <!-- Блок авторизации -->
-        <div id="authBlock">
+    <div id="authBlock">
         <h3>ВХОД / РЕГИСТРАЦИЯ</h3>
         <input type="text" id="authUser" placeholder="Логин">
         <input type="password" id="authPass" placeholder="Пароль">
@@ -104,12 +104,12 @@
             <button class="btn" id="btnLogin">Войти</button>
             <button class="btn green" id="btnRegister">Регистрация</button>
         </div>
-        <a href="#" id="forgotLink" style="font-size:12px;color:#888;">Забыли пароль?</a>
+        <a href="#" id="forgotLink">Забыли пароль?</a>
         <div id="forgotBlock" style="display:none;margin-top:8px;">
             <input type="text" id="forgotUser" placeholder="Логин">
             <button class="btn" id="btnForgot" style="font-size:12px;padding:4px 8px;">Получить код</button>
             <div id="resetBlock" style="display:none;margin-top:5px;">
-                <input type="text" id="resetCode" placeholder="Код из письма/консоли">
+                <input type="text" id="resetCode" placeholder="Код">
                 <input type="password" id="resetPass" placeholder="Новый пароль">
                 <button class="btn green" id="btnReset" style="font-size:12px;padding:4px 8px;">Сменить пароль</button>
             </div>
@@ -117,9 +117,8 @@
         <hr>
     </div>
 
-    <!-- Блок профиля (скрыт до входа) -->
     <div id="profileBlock" style="display:none;">
-        <span style="color:#81C784;">✔ Вы вошли как <b id="profileName"></b></span>
+        <span style="color:#81C784;">✔ <b id="profileName"></b></span>
         <button class="btn" id="btnLogout" style="margin-top:5px;">Выйти</button>
         <hr>
     </div>
@@ -139,7 +138,7 @@
         <div class="control-row"><label>Цвет кожи</label><input type="color" id="skinColor" value="#F2E7CD"></div>
         <div class="control-row"><label>Цвет контура</label><input type="color" id="outlineColor" value="#3A2E2E"></div>
         <div class="control-row"><label>Цвет шорт</label><input type="color" id="shortsColor" value="#34292E"></div>
-        <div class="control-row"><label>Цвет контура шорт</label><input type="color" id="shortsOutlineColor" value="#34292E"></div>
+        <div class="control-row"><label>Цвет контура шорт</label><input type="color" id="shortsOutlineColor" value="#151012"></div>
     </div>
     <div class="tab-content" id="tab-face"><p style="font-size:12px;color:#888;">Лицо (пробный манекен)</p></div>
     <div class="tab-content" id="tab-hair"><p style="font-size:12px;color:#888;">Волосы (скоро)</p></div>
@@ -154,7 +153,6 @@
 
 <script src="character-renderer.js"></script>
 <script>
-    // === ТАБЫ ===
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -164,36 +162,29 @@
         });
     });
 
-    // === ИНТЕРФЕЙС ===
     const nicknameInput = document.getElementById('nicknameInput');
     const nicknameDisplay = document.getElementById('nicknameDisplay');
     nicknameInput.addEventListener('input', () => {
         nicknameDisplay.textContent = nicknameInput.value || 'Гость';
     });
 
-    // === ЗАГРУЗКА ДАННЫХ ===
     const saved = JSON.parse(localStorage.getItem('tdop_character') || '{}');
     let userId = saved.id || null;
 
     if (saved.nickname) { nicknameInput.value = saved.nickname; nicknameDisplay.textContent = saved.nickname; }
-    if (saved.skinColor) document.getElementById('skinColor').value = saved.skinColor;
-    else document.getElementById('skinColor').value = '#F2E7CD';
-    if (saved.outlineColor) document.getElementById('outlineColor').value = saved.outlineColor;
-    else document.getElementById('outlineColor').value = '#3A2E2E';
-    if (saved.shortsColor) document.getElementById('shortsColor').value = saved.shortsColor;
-    else document.getElementById('shortsColor').value = '#34292E';
-    if (saved.shortsOutlineColor) document.getElementById('shortsOutlineColor').value = saved.shortsOutlineColor;
-    else document.getElementById('shortsOutlineColor').value = '#34292E';
+    document.getElementById('skinColor').value = saved.skinColor || '#F2E7CD';
+    document.getElementById('outlineColor').value = saved.outlineColor || '#3A2E2E';
+    document.getElementById('shortsColor').value = saved.shortsColor || '#34292E';
+    document.getElementById('shortsOutlineColor').value = saved.shortsOutlineColor || '#151012';
     if (saved.height) document.getElementById('heightSlider').value = saved.height;
 
     let charData = {
-    skinColor: document.getElementById('skinColor').value,
-    outlineColor: document.getElementById('outlineColor').value,
-    shortsColor: document.getElementById('shortsColor').value,
-    shortsOutlineColor: document.getElementById('shortsOutlineColor').value,
-};
+        skinColor: document.getElementById('skinColor').value,
+        outlineColor: document.getElementById('outlineColor').value,
+        shortsColor: document.getElementById('shortsColor').value,
+        shortsOutlineColor: document.getElementById('shortsOutlineColor').value,
+    };
 
-    // === ПРОФИЛЬ ===
     if (userId) {
         document.getElementById('authBlock').style.display = 'none';
         document.getElementById('profileBlock').style.display = 'block';
@@ -205,8 +196,6 @@
         location.reload();
     });
 
-    // === АВТОРИЗАЦИЯ ===
-       // === АВТОРИЗАЦИЯ ===
     async function api(url, body) {
         const res = await fetch(url, {
             method: 'POST',
@@ -224,16 +213,13 @@
         if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
         const data = await api('/api/login', { username: u, password: p });
         if (data.error) { err.textContent = data.error; return; }
-        const saveData = {
-            id: data.user.id,
-            nickname: data.user.nickname,
-            skinColor: data.user.skinColor,
-            outlineColor: data.user.outlineColor,
+        localStorage.setItem('tdop_character', JSON.stringify({
+            id: data.user.id, nickname: data.user.nickname,
+            skinColor: data.user.skinColor, outlineColor: data.user.outlineColor,
             shortsColor: data.user.shortsColor || '#34292E',
-            shortsOutlineColor: data.user.shortsOutlineColor || '#34292E',
+            shortsOutlineColor: data.user.shortsOutlineColor || '#151012',
             height: data.user.height
-        };
-        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        }));
         location.reload();
     });
 
@@ -246,20 +232,14 @@
         if (p.length < 3) { err.textContent = 'Пароль от 3 символов'; return; }
         const data = await api('/api/register', { username: u, password: p });
         if (data.error) { err.textContent = data.error; return; }
-        const saveData = {
-            id: data.id,
-            nickname: u,
-            skinColor: '#F2E7CD',
-            outlineColor: '#3A2E2E',
-            shortsColor: '#34292E',
-            shortsOutlineColor: '#34292E',
-            height: 1.0
-        };
-        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        localStorage.setItem('tdop_character', JSON.stringify({
+            id: data.id, nickname: u,
+            skinColor: '#F2E7CD', outlineColor: '#3A2E2E',
+            shortsColor: '#34292E', shortsOutlineColor: '#151012', height: 1.0
+        }));
         location.reload();
     });
 
-    // Забыли пароль
     document.getElementById('forgotLink').addEventListener('click', (e) => {
         e.preventDefault();
         document.getElementById('forgotBlock').style.display = 'block';
@@ -272,7 +252,7 @@
         const data = await api('/api/forgot', { username: u });
         if (data.error) { err.textContent = data.error; return; }
         document.getElementById('resetBlock').style.display = 'block';
-        alert('Код восстановления: ' + data.token + '\n\n(В реальной игре будет отправка на почту)');
+        alert('Код: ' + data.token);
     });
     document.getElementById('btnReset').addEventListener('click', async () => {
         const u = document.getElementById('forgotUser').value.trim();
@@ -283,60 +263,14 @@
         if (!u || !t || !p) { err.textContent = 'Заполни все поля'; return; }
         const data = await api('/api/reset', { username: u, token: t, newPassword: p });
         if (data.error) { err.textContent = data.error; return; }
-        alert('Пароль изменён! Войдите с новым паролем.');
-        location.reload();
-    });
-    document.getElementById('btnLogin').addEventListener('click', async () => {
-        const u = document.getElementById('authUser').value.trim();
-        const p = document.getElementById('authPass').value.trim();
-        const err = document.getElementById('authError');
-        err.textContent = '';
-        if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
-        const data = await api('/api/login', { username: u, password: p });
-        if (data.error) { err.textContent = data.error; return; }
-        const saveData = {
-            id: data.user.id,
-            nickname: data.user.nickname,
-            skinColor: data.user.skinColor,
-            outlineColor: data.user.outlineColor,
-            shortsColor: data.user.shortsColor || '#34292E',
-            shortsOutlineColor: data.user.shortsOutlineColor || '#34292E',
-            height: data.user.height
-        };
-        localStorage.setItem('tdop_character', JSON.stringify(saveData));
+        alert('Пароль изменён!');
         location.reload();
     });
 
-    document.getElementById('btnRegister').addEventListener('click', async () => {
-        const u = document.getElementById('authUser').value.trim();
-        const p = document.getElementById('authPass').value.trim();
-        const n = document.getElementById('authNick').value.trim();
-        const err = document.getElementById('authError');
-        err.textContent = '';
-        if (!u || !p || !n) { err.textContent = 'Заполни все поля'; return; }
-        if (p.length < 3) { err.textContent = 'Пароль от 3 символов'; return; }
-        const data = await api('/api/register', { username: u, password: p, nickname: n });
-        if (data.error) { err.textContent = data.error; return; }
-        const saveData = {
-            id: data.id,
-            nickname: n,
-            skinColor: '#F2E7CD',
-            outlineColor: '#3A2E2E',
-            shortsColor: '#34292E',
-            shortsOutlineColor: '#151012',
-            height: 1.0
-        };
-        localStorage.setItem('tdop_character', JSON.stringify(saveData));
-        location.reload();
-    });
-
-    // === ПЕРСОНАЖ ===
     const characterContainer = document.getElementById('character');
     let rebuildTimeout = null;
 
-    function rebuild() {
-        renderCharacter(characterContainer, charData);
-    }
+    function rebuild() { renderCharacter(characterContainer, charData); }
 
     onReady(rebuild);
     loadAllImages(rebuild);
@@ -369,7 +303,6 @@
         document.querySelector('.character-wrapper').style.transform = `scale(${0.85 * parseFloat(saved.height)})`;
     }
 
-    // === КНОПКИ ===
     document.getElementById('btnSave').addEventListener('click', async () => {
         const data = {
             id: userId,
@@ -383,10 +316,9 @@
         localStorage.setItem('tdop_character', JSON.stringify(data));
         if (data.id) {
             const resp = await api('/api/save_appearance', data);
-            if (resp.success) alert('Сохранено на сервере!');
-            else alert('Сохранено локально (ошибка сервера)');
+            alert(resp.success ? 'Сохранено!' : 'Ошибка сервера');
         } else {
-            alert('Сохранено локально (войдите для сохранения на сервер)');
+            alert('Войдите для сохранения на сервер');
         }
     });
 

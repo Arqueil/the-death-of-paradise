@@ -14,93 +14,65 @@
             justify-content: center;
             height: 100vh;
         }
-        .login-box {
+        .box {
             background: #3A3436;
             padding: 40px;
             width: 360px;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
-        h1 {
-            text-align: center;
-            letter-spacing: 3px;
-            color: #fff;
-            margin-bottom: 30px;
-            font-size: 20px;
-        }
-        .tabs {
-            display: flex;
-            gap: 0;
-            margin-bottom: 25px;
-        }
+        h1 { text-align: center; letter-spacing: 3px; color: #fff; margin-bottom: 30px; font-size: 20px; }
+        .tabs { display: flex; gap: 0; margin-bottom: 25px; }
         .tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            cursor: pointer;
-            background: #5C5154;
-            color: #999;
-            font-size: 14px;
-            letter-spacing: 1px;
-            transition: 0.2s;
+            flex: 1; text-align: center; padding: 10px; cursor: pointer;
+            background: #5C5154; color: #999; font-size: 14px; letter-spacing: 1px;
         }
         .tab.active { background: #7A6B6E; color: #fff; }
-        .tab:first-child { margin-right: 2px; }
         .form { display: none; flex-direction: column; gap: 15px; }
         .form.active { display: flex; }
         .form input {
-            background: #5C5154;
-            border: none;
-            padding: 12px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
+            background: #5C5154; border: none; padding: 12px;
+            color: #fff; font-size: 14px; outline: none;
         }
-        .form input:focus { background: #6B5F62; }
         .form button {
-            background: #7A6B6E;
-            border: none;
-            color: #fff;
-            padding: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            letter-spacing: 1px;
-            transition: 0.2s;
-            margin-top: 5px;
+            background: #7A6B6E; border: none; color: #fff;
+            padding: 12px; cursor: pointer; font-size: 14px; letter-spacing: 1px;
         }
-        .form button:hover { background: #8B7B7E; }
+        .form button.green { background: #5A7D5A; }
         .error { color: #E57373; font-size: 13px; text-align: center; min-height: 18px; }
-        .success { color: #81C784; font-size: 13px; text-align: center; }
+        a { color: #888; font-size: 12px; text-align: center; }
     </style>
 </head>
 <body>
-
-<div class="login-box">
+<div class="box">
     <h1>The Death of Paradise</h1>
     <div class="tabs">
         <div class="tab active" data-tab="login">ВХОД</div>
         <div class="tab" data-tab="register">РЕГИСТРАЦИЯ</div>
     </div>
-
-    <!-- Вход -->
     <div class="form active" id="form-login">
         <input type="text" id="loginUser" placeholder="Логин">
         <input type="password" id="loginPass" placeholder="Пароль">
         <div class="error" id="loginError"></div>
         <button id="btnLogin">Войти</button>
+        <a href="#" id="forgotLink">Забыли пароль?</a>
+        <div id="forgotBlock" style="display:none;margin-top:10px;">
+            <input type="text" id="forgotUser" placeholder="Логин">
+            <button id="btnForgot" style="width:100%;margin-top:5px;">Получить код</button>
+            <div id="resetBlock" style="display:none;margin-top:5px;">
+                <input type="text" id="resetCode" placeholder="Код">
+                <input type="password" id="resetPass" placeholder="Новый пароль">
+                <button class="green" id="btnReset" style="width:100%;">Сменить пароль</button>
+            </div>
+        </div>
     </div>
-
-    <!-- Регистрация -->
     <div class="form" id="form-register">
         <input type="text" id="regUser" placeholder="Логин">
-        <input type="password" id="regPass" placeholder="Пароль">
-        <input type="text" id="regNick" placeholder="Ник в игре">
+        <input type="password" id="regPass" placeholder="Пароль (от 3 символов)">
         <div class="error" id="regError"></div>
-        <button id="btnRegister">Создать персонажа</button>
+        <button class="green" id="btnRegister">Создать персонажа</button>
     </div>
 </div>
-
 <script>
-    // Табы
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -110,86 +82,75 @@
         });
     });
 
-    // Вход
+    async function api(url, body) {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        return res.json();
+    }
+
     document.getElementById('btnLogin').addEventListener('click', async () => {
-        const username = document.getElementById('loginUser').value.trim();
-        const password = document.getElementById('loginPass').value.trim();
-        document.getElementById('loginError').textContent = '';
-        if (!username || !password) {
-            document.getElementById('loginError').textContent = 'Заполни все поля';
-            return;
-        }
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (data.error) {
-                document.getElementById('loginError').textContent = data.error;
-            } else {
-                const saveData = {
-                    id: data.user.id,
-                    nickname: data.user.nickname,
-                    skinColor: data.user.skinColor,
-                    outlineColor: data.user.outlineColor,
-                    height: data.user.height
-                };
-                localStorage.setItem('tdop_character', JSON.stringify(saveData));
-                window.location.href = '/editor';
-            }
-        } catch (e) {
-            document.getElementById('loginError').textContent = 'Ошибка соединения';
-        }
+        const u = document.getElementById('loginUser').value.trim();
+        const p = document.getElementById('loginPass').value.trim();
+        const err = document.getElementById('loginError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
+        const data = await api('/api/login', { username: u, password: p });
+        if (data.error) { err.textContent = data.error; return; }
+        localStorage.setItem('tdop_character', JSON.stringify({
+            id: data.user.id, nickname: data.user.nickname,
+            skinColor: data.user.skinColor, outlineColor: data.user.outlineColor,
+            shortsColor: data.user.shortsColor || '#34292E',
+            shortsOutlineColor: data.user.shortsOutlineColor || '#151012',
+            height: data.user.height
+        }));
+        window.location.href = '/editor';
     });
 
-    // Вход по Enter
-    document.getElementById('loginPass').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('btnLogin').click();
-    });
-
-    // Регистрация
     document.getElementById('btnRegister').addEventListener('click', async () => {
-        const username = document.getElementById('regUser').value.trim();
-        const password = document.getElementById('regPass').value.trim();
-        const nickname = document.getElementById('regNick').value.trim();
-        document.getElementById('regError').textContent = '';
-        if (!username || !password || !nickname) {
-            document.getElementById('regError').textContent = 'Заполни все поля';
-            return;
-        }
-        if (password.length < 3) {
-            document.getElementById('regError').textContent = 'Пароль от 3 символов';
-            return;
-        }
-        try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, nickname })
-            });
-            const data = await res.json();
-            if (data.error) {
-                document.getElementById('regError').textContent = data.error;
-            } else {
-                const saveData = {
-                    id: data.id,
-                    nickname: nickname,
-                    skinColor: '#F2E7CD',
-                    outlineColor: '#3A2E2E',
-                    height: 1.0
-                };
-                localStorage.setItem('tdop_character', JSON.stringify(saveData));
-                window.location.href = '/editor';
-            }
-        } catch (e) {
-            document.getElementById('regError').textContent = 'Ошибка соединения';
-        }
+        const u = document.getElementById('regUser').value.trim();
+        const p = document.getElementById('regPass').value.trim();
+        const err = document.getElementById('regError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Введи логин и пароль'; return; }
+        if (p.length < 3) { err.textContent = 'Пароль от 3 символов'; return; }
+        const data = await api('/api/register', { username: u, password: p });
+        if (data.error) { err.textContent = data.error; return; }
+        localStorage.setItem('tdop_character', JSON.stringify({
+            id: data.id, nickname: u,
+            skinColor: '#F2E7CD', outlineColor: '#3A2E2E',
+            shortsColor: '#34292E', shortsOutlineColor: '#151012', height: 1.0
+        }));
+        window.location.href = '/editor';
     });
 
-    document.getElementById('regNick').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('btnRegister').click();
+    document.getElementById('forgotLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('forgotBlock').style.display = 'block';
+    });
+    document.getElementById('btnForgot').addEventListener('click', async () => {
+        const u = document.getElementById('forgotUser').value.trim();
+        const err = document.getElementById('loginError');
+        err.textContent = '';
+        if (!u) { err.textContent = 'Введи логин'; return; }
+        const data = await api('/api/forgot', { username: u });
+        if (data.error) { err.textContent = data.error; return; }
+        document.getElementById('resetBlock').style.display = 'block';
+        alert('Код: ' + data.token);
+    });
+    document.getElementById('btnReset').addEventListener('click', async () => {
+        const u = document.getElementById('forgotUser').value.trim();
+        const t = document.getElementById('resetCode').value.trim();
+        const p = document.getElementById('resetPass').value.trim();
+        const err = document.getElementById('loginError');
+        err.textContent = '';
+        if (!u || !t || !p) { err.textContent = 'Заполни все поля'; return; }
+        const data = await api('/api/reset', { username: u, token: t, newPassword: p });
+        if (data.error) { err.textContent = data.error; return; }
+        alert('Пароль изменён!');
+        location.reload();
     });
 </script>
 </body>
