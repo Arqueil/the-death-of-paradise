@@ -70,8 +70,7 @@
         ctx.fillStyle = '#fff';
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(nickname, playerX, playerY - (charCanvas ? charCanvas.height/2 + 10 : 30));
-
+        ctx.fillText(nickname, playerX, playerY - (charCanvas ? charCanvas.height/2 - 10 : 24));
         requestAnimationFrame(loop);
     }
     loop();

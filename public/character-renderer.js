@@ -7,17 +7,17 @@ const layers = [
     { file: 'parts/forearm2_outline.png',   tint: false, group: 'outline' },
     { file: 'parts/hip2_fill.png',          tint: true,  group: 'skin' },
     { file: 'parts/hip2_outline.png',       tint: false, group: 'outline' },
-    { file: 'parts/shorts3_fill.png',       tint: true,  group: 'shorts' },
+    { file: 'parts/shorts3_fill.png',       tint: false, group: 'shorts' },
     { file: 'parts/shorts3_outline.png',    tint: false, group: 'shorts_outline' },
     { file: 'parts/knee2_fill.png',         tint: true,  group: 'skin' },
     { file: 'parts/knee2_outline.png',      tint: false, group: 'outline' },
     { file: 'parts/torso_fill.png',         tint: true,  group: 'skin' },
     { file: 'parts/torso_outline.png',      tint: false, group: 'outline' },
-    { file: 'parts/shorts2_fill.png',       tint: true,  group: 'shorts' },
+    { file: 'parts/shorts2_fill.png',       tint: false, group: 'shorts' },
     { file: 'parts/shorts2_outline.png',    tint: false, group: 'shorts_outline' },
     { file: 'parts/hip_fill.png',           tint: true,  group: 'skin' },
     { file: 'parts/hip_outline.png',        tint: false, group: 'outline' },
-    { file: 'parts/shorts1_fill.png',       tint: true,  group: 'shorts' },
+    { file: 'parts/shorts1_fill.png',       tint: false, group: 'shorts' },
     { file: 'parts/shorts1_outline.png',    tint: false, group: 'shorts_outline' },
     { file: 'parts/knee_fill.png',          tint: true,  group: 'skin' },
     { file: 'parts/knee_outline.png',       tint: false, group: 'outline' },
@@ -35,28 +35,36 @@ const layers = [
 
 const originalImages = {};
 const tintedCache = {};
-let readyCb = null;
+let totalCount = layers.length;
+let readyCallbacks = [];
 
 function loadAllImages(cb) {
-    let loaded = 0;
+    if (cb) readyCallbacks.push(cb);
+    let pending = 0;
     layers.forEach(l => {
-        if (originalImages[l.file]) { loaded++; check(); return; }
+        if (originalImages[l.file]) return;
+        pending++;
         const img = new Image();
         img.src = l.file;
-        img.onload = () => { loaded++; check(); };
-        img.onerror = () => { loaded++; check(); };
+        img.onload = () => { pending--; if (pending <= 0) fire(); };
+        img.onerror = () => { pending--; if (pending <= 0) fire(); };
         originalImages[l.file] = img;
     });
-    function check() { if (loaded >= layers.length && readyCb) readyCb(); }
-    readyCb = cb;
+    if (pending === 0) fire();
+    function fire() {
+        readyCallbacks.forEach(fn => fn());
+        readyCallbacks = [];
+    }
 }
 
 function onReady(cb) {
-    if (Object.keys(originalImages).length >= layers.length) cb();
-    else readyCb = cb;
+    let missing = layers.filter(l => !originalImages[l.file]).length;
+    if (missing === 0) cb();
+    else readyCallbacks.push(cb);
 }
 
 function applyTint(sourceImg, colorHex) {
+    if (!sourceImg || !sourceImg.src) return '';
     const key = sourceImg.src + '_' + colorHex;
     if (tintedCache[key]) return tintedCache[key];
     const c = document.createElement('canvas');
@@ -86,23 +94,26 @@ function applyTint(sourceImg, colorHex) {
 function renderCharacter(container, charData) {
     const skin = charData.skinColor || '#F2E7CD';
     const outline = charData.outlineColor || '#3A2E2E';
-    const shorts = charData.shortsColor || '#34292E';
-    const shortsOutline = charData.shortsOutlineColor || '#151012';
 
     if (!container._built) {
         container.innerHTML = '';
         layers.forEach((l, i) => {
+            const srcImg = originalImages[l.file];
+            if (!srcImg) return;
             const img = document.createElement('img');
             img.style.cssText = 'position:absolute;top:0;left:0;width:'+(canvasSize.w/2)+'px;height:'+(canvasSize.h/2)+'px;pointer-events:none;z-index:'+i;
             img.dataset.file = l.file;
             img.dataset.group = l.group;
             img.dataset.tint = l.tint;
+            const g = l.group;
+            const t = l.tint;
+            if (g === 'skin' && t) img.src = applyTint(srcImg, skin);
+            else if (g === 'outline' && !t) img.src = applyTint(srcImg, outline);
+            else img.src = srcImg.src;
             container.appendChild(img);
         });
         container._built = true;
-    }
-
-    requestAnimationFrame(() => {
+    } else {
         container.querySelectorAll('img').forEach(img => {
             const srcImg = originalImages[img.dataset.file];
             if (!srcImg) return;
@@ -110,11 +121,8 @@ function renderCharacter(container, charData) {
             const t = img.dataset.tint === 'true';
             if (g === 'skin' && t) img.src = applyTint(srcImg, skin);
             else if (g === 'outline' && !t) img.src = applyTint(srcImg, outline);
-            else if (g === 'shorts' && t) img.src = applyTint(srcImg, shorts);
-            else if (g === 'shorts_outline' && !t) img.src = applyTint(srcImg, shortsOutline);
-            else img.src = srcImg.src;
         });
-    });
+    }
 }
 
 function renderToCanvas(charData, scale) {

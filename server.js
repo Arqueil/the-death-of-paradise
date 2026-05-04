@@ -21,9 +21,9 @@ function writeJSON(file, data) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/world', (req, res) => res.sendFile(path.join(__dirname, 'public', 'world.html')));
 
-// Регистрация (ник не обязателен)
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.json({ error: 'Логин и пароль обязательны' });
@@ -32,36 +32,30 @@ app.post('/api/register', (req, res) => {
     if (users.find(u => u.username === username)) return res.json({ error: 'Логин занят' });
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     users.push({
-        id,
-        username,
+        id, username,
         password: bcrypt.hashSync(password, 10),
         nickname: username,
         skin_color: '#F2E7CD',
-        outline_color: '#3A2E2E',
-        shorts_color: '#34292E',
-        shorts_outline_color: '#34292E',
+        outline_color: '#B6918C',
         height: 1.0
     });
     writeJSON(DB_FILE, users);
     res.json({ success: true, id });
 });
 
-// Вход
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.json({ error: 'Введи логин и пароль' });
     const user = readJSON(DB_FILE).find(u => u.username === username);
     if (!user || !bcrypt.compareSync(password, user.password)) return res.json({ error: 'Неверный логин или пароль' });
-    res.json({ success: true, user: { id: user.id, username: user.username, nickname: user.nickname, skinColor: user.skin_color, outlineColor: user.outline_color, shortsColor: user.shorts_color, shortsOutlineColor: user.shorts_outline_color, height: user.height } });
+    res.json({ success: true, user: { id: user.id, username: user.username, nickname: user.nickname, skinColor: user.skin_color, outlineColor: user.outline_color, height: user.height } });
 });
 
-// Запрос сброса пароля
 app.post('/api/forgot', (req, res) => {
     const { username } = req.body;
     if (!username) return res.json({ error: 'Введи логин' });
     const users = readJSON(DB_FILE);
-    const user = users.find(u => u.username === username);
-    if (!user) return res.json({ error: 'Пользователь не найден' });
+    if (!users.find(u => u.username === username)) return res.json({ error: 'Пользователь не найден' });
     const token = crypto.randomBytes(4).toString('hex');
     const resets = readJSON(RESET_FILE);
     resets.push({ username, token, created: Date.now() });
@@ -69,7 +63,6 @@ app.post('/api/forgot', (req, res) => {
     res.json({ success: true, token });
 });
 
-// Сброс пароля
 app.post('/api/reset', (req, res) => {
     const { username, token, newPassword } = req.body;
     if (!username || !token || !newPassword) return res.json({ error: 'Заполни все поля' });
@@ -87,19 +80,16 @@ app.post('/api/reset', (req, res) => {
     res.json({ success: true });
 });
 
-// Сохранение внешности
 app.post('/api/save_appearance', (req, res) => {
-    const { id, skinColor, outlineColor, shortsColor, shortsOutlineColor, height, nickname } = req.body;
+    const { id, skinColor, outlineColor, height, nickname } = req.body;
     if (!id) return res.json({ error: 'Не авторизован' });
     const users = readJSON(DB_FILE);
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) return res.json({ error: 'Пользователь не найден' });
-    if (skinColor) users[idx].skin_color = skinColor;
-    if (outlineColor) users[idx].outline_color = outlineColor;
-    if (shortsColor) users[idx].shorts_color = shortsColor;
-    if (shortsOutlineColor) users[idx].shorts_outline_color = shortsOutlineColor;
-    if (height) users[idx].height = height;
-    if (nickname) users[idx].nickname = nickname;
+    if (skinColor !== undefined) users[idx].skin_color = skinColor;
+    if (outlineColor !== undefined) users[idx].outline_color = outlineColor;
+    if (height !== undefined) users[idx].height = parseFloat(height) || 1.0;
+    if (nickname !== undefined) users[idx].nickname = nickname;
     writeJSON(DB_FILE, users);
     res.json({ success: true });
 });
