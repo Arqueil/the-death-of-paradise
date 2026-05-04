@@ -25,7 +25,11 @@
     window.addEventListener('resize', resize);
     resize();
 
-    const charData = JSON.parse(localStorage.getItem('tdop_character') || '{}');
+    function getCharData() {
+        return JSON.parse(localStorage.getItem('tdop_character') || '{}');
+    }
+
+    let charData = getCharData();
     const nickname = charData.nickname || 'Гость';
     const heightScale = parseFloat(charData.height || '1');
 
@@ -45,6 +49,7 @@
 
     let charCanvas = null;
     function updateCharCanvas() {
+        charData = getCharData();
         if (charData.skinColor) {
             charCanvas = renderToCanvas(charData, 0.25 * heightScale);
         }
@@ -71,9 +76,14 @@
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(nickname, playerX, playerY - (charCanvas ? charCanvas.height/2 - 10 : 24));
+
         requestAnimationFrame(loop);
     }
-    loop();
+
+    // При возврате с редактора — обновляем персонажа
+    window.addEventListener('focus', () => {
+        updateCharCanvas();
+    });
 </script>
 </body>
 </html>
